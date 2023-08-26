@@ -3,6 +3,8 @@ from pygame.math import Vector2
 from time import time
 from scripts import classes as cl
 
+from random import randint
+
 pg.init()
 screen = pg.display.set_mode((1024, 750),pg.DOUBLEBUF)
 pg.display.set_caption("AstroStike")
@@ -22,7 +24,9 @@ def game():
     camPos = Vector2(0, 0)
     player = cl.Player(camPos + Vector2(512, 375))
 
-    objects = [pg.Rect(x*100-2500, y*100-2500, 5, 5) for x in range(0, 50) for y in range(0, 50)]
+    stars = [pg.Rect(x*100-2500 + randint(-100,100), y*100-2500  + randint(-100,100), 2, 2) for x in range(0, 50) for y in range(0, 50)]
+    
+    # [cl.Obstacle(Vector2(randint(-2500, 2500), randint(-2500, 2500)), 0.1) for _ in range(0, 100)]
 
 
     prevTime = time()
@@ -45,19 +49,24 @@ def game():
 
     #---Drawing---------------------------------------------
        
-        for obj in objects:
+        for obj in stars:
             pg.draw.rect(screen, "#FFFFFF", (obj.x - camPos.x, obj.y - camPos.y, obj.height, obj.width))
 
         player.update(deltaTime)
         player.draw(screen, camPos)
 
         cl.BulletGroup.update(deltaTime)
-        for i in cl.BulletGroup:
-            i.draw(screen, camPos)
+        cl.BulletGroup.draw(screen, camPos)
+        # cl.ObstacleGroup.draw(screen, camPos)
 
+        # for obs in cl.ObstacleGroup:
+        #     for i in cl.BulletGroup:
+        #         if i.mask.overlap(obs.mask, (obs.pos.x - player.pos.x, obs.pos.y - player.pos.y)):
+        #             obs.kill()
+        #             print("hit")
     #-------------------------------------------------------
 
-        debug(f"FPS: {round(clock.get_fps())} | ({camPos.x:.0f},{camPos.y:.0f}) | Vel: {player.vel.length():.0f} | {player.dir:.0f} | {player.targetDir:.0f}")
+        debug(f"FPS: {round(clock.get_fps())} | ({camPos.x:.0f},{camPos.y:.0f}) | Vel: {player.vel.length():.0f} | {player.dir.angle_to(Vector2(0,-1)):.0f} | {player.targetDir.angle_to(Vector2(0,-1)):.0f} | {len(cl.ObstacleGroup)}")
         pg.display.update()
 
 if __name__ == "__main__":

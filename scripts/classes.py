@@ -2,7 +2,24 @@ import pygame as pg
 from pygame.math import Vector2
 from random import randint
 
-BulletGroup = pg.sprite.Group()
+from math import cos, sin
+
+
+class Obstacle(pg.sprite.Sprite):
+    def __init__(self, pos, size):
+        super().__init__(ObstacleGroup)
+        self.pos = Vector2(pos)
+        self.size = size
+
+        self.image = pg.image.load("Assets/Images/Obstacle.png").convert_alpha()
+        self.image = pg.transform.rotozoom(self.image,randint(-90,90),self.size)
+        self.rect = self.image.get_rect(center=pos)
+
+        self.mask = pg.mask.from_surface(self.image)
+
+    def draw(self, screen, camPos):
+        Mrect = self.image.get_rect(center=self.pos - camPos)
+        screen.blit(self.image, Mrect)
 
 class Counter:
     def __init__(self, startValue,*,loopOver=False, maxValue=0):
@@ -11,9 +28,11 @@ class Counter:
         self.maxValue = maxValue
 
     def tick(self, deltaTime):
-        self.value += deltaTime if self.loopOver else 0
+        self.value += deltaTime
+
         if self.value > self.maxValue and not self.loopOver:
             self.value = self.maxValue
+            return True
         elif self.value > self.maxValue and self.loopOver:
             self.value = 0
             return True
@@ -22,14 +41,26 @@ class Counter:
     def reset(self):
         self.value = 0
 
+class CustomGroup(pg.sprite.Group):
+    def __init__(self):
+        super().__init__()
+
+    def update(self, deltaTime):
+        for bullet in self.sprites():
+            bullet.update(deltaTime)
+
+    def draw(self, screen, camPos):
+        for bullet in self.sprites():
+            bullet.draw(screen, camPos)
 
 class Player(pg.sprite.Sprite):
     def __init__(self, pos):
         super().__init__()
-        self.targetDir = 0
-        self.dir = 0
+        self.targetDir = Vector2(0, -1)
+        self.dir = Vector2(0, -1)
         self.display_image = pg.transform.rotozoom(pg.image.load("Assets/Images/Skylark.png"), 0, 0.5).convert_alpha()
         self.image = pg.transform.rotozoom(pg.image.load("Assets/Images/Skylark.png"), 0, 0.5).convert_alpha()
+        self.rect = self.image.get_rect()
         self.pos = Vector2(pos)
         self.vel = Vector2(0, 0)
         self.acc = Vector2(0, 0)
@@ -39,6 +70,8 @@ class Player(pg.sprite.Sprite):
 
         self.bulletTimer = Counter(0, loopOver=True, maxValue=0.1)
 
+        self.mask = pg.mask.from_surface(self.image)
+
     def update(self, deltaTime):
         self.acc = 0
         keys = pg.key.get_pressed()
@@ -47,25 +80,21 @@ class Player(pg.sprite.Sprite):
         if keys[pg.K_s]:
             self.vel -= self.vel * 0.9 * deltaTime
         if keys[pg.K_a]:
-            self.targetDir -= deltaTime * 90
+            self.targetDir = self.targetDir.rotate(deltaTime * 90)
         if keys[pg.K_d]:
-            self.targetDir += deltaTime * 90
+            self.targetDir = self.targetDir.rotate(deltaTime * -90)
         if keys[pg.K_SPACE]:
             if self.bulletTimer.tick(deltaTime):
-                Bullet(self.pos, self.dir, self.vel.length() + 200)
+                Bullet(self.pos, self.vel, self.dir)
 
 
-        self.vel += (Vector2(0,-1) * self.acc).rotate(self.dir) * self.maxAcc * deltaTime
-        self.image = pg.transform.rotozoom(self.display_image, -self.dir,1)
+        self.vel += (Vector2(0,-1) * self.acc).rotate(self.dir.angle_to(Vector2(0,-1))) * self.maxAcc * deltaTime
+        self.image = pg.transform.rotozoom(self.display_image, -self.dir.angle_to(Vector2(0,-1)),1)
+        self.mask = pg.mask.from_surface(self.image)
 
-        self.dir += (self.targetDir - self.dir) * deltaTime * 7
+        self.dir = self.dir.lerp(self.targetDir, 0.1)
 
-        if self.targetDir > 360:
-            self.targetDir -= 360
-            self.dir -= 360
-        if self.targetDir < 0:
-            self.targetDir += 360
-            self.dir += 360
+
 
 
 
@@ -80,40 +109,53 @@ class Player(pg.sprite.Sprite):
 
 
 
-        self.trailPoints.append(self.pos + Vector2(26,100).rotate(self.dir))
-        self.trailPoints.append(self.pos + Vector2(-24,100).rotate(self.dir))
+        self.trailPoints.append(self.pos + Vector2(26,100).rotate(self.dir.angle_to(Vector2(0,-1))))
+        self.trailPoints.append(self.pos + Vector2(-24,100).rotate(self.dir.angle_to(Vector2(0,-1))))
         
         while len(self.trailPoints) > 20:
             self.trailPoints.pop(0)
 
     def draw(self, screen, camPos):
-        Mrect = self.image.get_rect(center=self.pos - camPos)
-        screen.blit(self.image, Mrect)
         for point in self.trailPoints:
             pg.draw.circle(screen, "red", (point.x - camPos.x, point.y - camPos.y), randint(3,7))
+        self.rect = self.image.get_rect(center=self.pos - camPos)
+        screen.blit(self.image, self.rect)
 
 class Bullet(pg.sprite.Sprite):
 
-    def __init__(self, pos, dir, speed):
+    def __init__(self, posVec:Vector2, velVec:Vector2, heading:Vector2):
+
         super().__init__(BulletGroup)
-        self.image = pg.Surface((5, 5))
+        self.pos = Vector2(posVec)
+        self.dir = heading.reflect(Vector2(0,1)).rotate(180)
+        self.vel = velVec + self.dir * 1000
+
+        self.image = pg.Surface((5, 15))
         self.image.fill("red")
         self.display_image = self.image
-        self.rect = self.image.get_rect(center=pos)
-        self.pos = Vector2(pos)
-        self.dir = dir
-        self.speed = speed
-        self.vel = Vector2(0, 0)
+        self.rect = self.image.get_rect(center=posVec)
 
+        self.lifeTime = Counter(0, maxValue=1)
+        self.display_image = pg.transform.rotozoom(self.image,self.dir.angle_to(Vector2(0,-1)), 1)
+        print(self.vel.length()) 
+
+        self.mask = pg.mask.from_surface(self.display_image)
 
     def update(self, deltaTime):
-        self.vel = Vector2(0, -1).rotate(self.dir) * self.speed
         self.pos += self.vel * deltaTime
         self.rect.center = self.pos
-        self.display_image = pg.transform.rotozoom(self.image, -self.dir, 1)
+
+
+        if self.lifeTime.tick(deltaTime):
+            self.kill()
 
         
         
     def draw(self, screen, camPos):
         Mrect = self.image.get_rect(center=self.pos - camPos)
         screen.blit(self.display_image, Mrect)
+
+        
+
+BulletGroup = CustomGroup()
+ObstacleGroup = CustomGroup()
