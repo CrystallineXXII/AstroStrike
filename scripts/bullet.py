@@ -7,7 +7,7 @@ BulletGroup = CustomGroup()
 
 class Bullet(pg.sprite.Sprite):
 
-    def __init__(self, posVec:Vector2, velVec:Vector2, heading:Vector2):
+    def __init__(self, posVec:Vector2, velVec:Vector2, heading:Vector2,*,player_owned:bool = True):
 
         super().__init__(BulletGroup)
         self.pos = Vector2(posVec)
@@ -21,6 +21,7 @@ class Bullet(pg.sprite.Sprite):
 
         self.lifeTime = Counter(0, maxValue=1)
         self.display_image = pg.transform.rotozoom(self.image,self.dir.angle_to(Vector2(0,-1)), 1)
+        self.player_owned = player_owned
 
 
         self.mask = pg.mask.from_surface(self.display_image)

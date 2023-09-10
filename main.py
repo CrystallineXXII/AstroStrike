@@ -9,7 +9,7 @@ pg.init()
 screen = pg.display.set_mode((1024, 750), pg.DOUBLEBUF)
 pg.display.set_caption("AstroStike")
 
-font = pg.font.Font("Assets/Fonts/Comfortaa.ttf", 20)
+font = pg.font.Font("Assets/Fonts/Raleway.ttf", 20)
 
 
 def debug(string: str):
@@ -57,21 +57,24 @@ def game():
 
         cl.BulletGroup.update(deltaTime)
         cl.BulletGroup.draw(screen, camPos)
-        for i in range(6):pg.draw.circle(screen, "#09cb8a", - camPos, 9950 + i *20, 10)
-
+        for i in range(6):
+            pg.draw.circle(screen, "#09cb8a", -camPos, 9950 + i * 20, 10)
 
         # -------------------------------------------------------
 
         cl.draw_gizmos(screen, camPos, player)
 
         debug(
-            f"FPS: {round(clock.get_fps())} | ({camPos.x:.0f},{camPos.y:.0f}) | Vel: {player.vel.length():.0f} | {player.dir.angle_to(Vector2(0,-1)):.0f} | {player.targetDir.angle_to(Vector2(0,-1)):.0f} | {len(cl.ObstacleGroup)}"
+            f"FPS: {round(clock.get_fps())} | ({camPos.x:.0f},{camPos.y:.0f}) | Vel: {player.vel.length():.0f} | {player.dir.angle_to(Vector2(0,-1)):.0f} | {player.targetDir.angle_to(Vector2(0,-1)):.0f} | {len(cl.BulletGroup)}"
         )
         pg.display.update()
 
+def menu():
+    return game, ()
+
 
 if __name__ == "__main__":
-    func = game
+    func = menu
     params = ()
 
     while True:
