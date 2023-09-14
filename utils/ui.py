@@ -45,18 +45,18 @@ def draw_core_gizmo(screen, camPos, player):
     direction = -player.pos.normalize()
     pg.draw.arc(
         screen,
-        "#f62525",
+        "#32e800",
         pg.Rect(player.pos - camPos - Vector2(150, 150), Vector2(300, 300)),
         math.radians(direction.angle_to(Vector2(1, 0)) - 10),
         math.radians(direction.angle_to(Vector2(1, 0)) + 10),
     )
     pg.draw.circle(
         screen,
-        "#f62525",
+        "#32e800",
         player.pos
         - camPos
         + Vector2(0, 150).rotate(-direction.angle_to(Vector2(0,1))),
-        4,
+        3,
     )
 
 
@@ -66,4 +66,5 @@ def draw_gizmos(screen, camPos, player):
     if player.vel.length() > 0: draw_vel_gizmo(screen, camPos, player)
     draw_enemy_gizmo(screen, camPos, player)
     draw_core_gizmo(screen, camPos, player)
+
 

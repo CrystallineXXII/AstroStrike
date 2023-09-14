@@ -15,7 +15,7 @@ class Bullet(pg.sprite.Sprite):
         self.vel = velVec + self.dir * 1000
 
         self.image = pg.Surface((5, 15))
-        self.image.fill("red")
+        self.image.fill("#48ffc8")
         self.display_image = self.image
         self.rect = self.image.get_rect(center=posVec)
 
