@@ -8,6 +8,7 @@ from random import randint
 pg.init()
 screen = pg.display.set_mode((1024, 750), pg.DOUBLEBUF)
 pg.display.set_caption("AstroStike")
+pg.display.set_icon(pg.image.load("Assets/Images/icon.png"))
 
 font = pg.font.Font("Assets/Fonts/Raleway.ttf", 20)
 
